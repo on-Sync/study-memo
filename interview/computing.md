@@ -21,3 +21,7 @@
 #### Parallelism
 - Concurrency 와는 다르게 정확히 동일한 시간에 수행되는 관련된 명령수행 방법을 말한다.
 - Thread 처리의 병렬성은 CPU Core (물리적) 으로 별도의 Unit 을 사용하여 수행하는 것을 말한다.
+
+### 3. Event loop 란?
+
+...
