@@ -44,6 +44,13 @@
 ---
 
 <details>
+<summary>참조</summary>
+https://stackoverflow.com/questions/35610215/java-command-pattern-example-with-runnable-class-is-receiver-missing    
+https://www.baeldung.com/java-command-pattern  
+    
+</details>
+    
+<details>
 <summary>Diagram source</summary>
 
 ```mermaid
