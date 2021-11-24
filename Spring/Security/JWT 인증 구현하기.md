@@ -118,7 +118,108 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 - 이는 사용자의 요청대상이 `permitAll(모두허락)` 이 아닐경우, 로그인에 따른 권한획득이 필요하게 됩니다.
 - Spring Security 과 같은 보안에서는 로그인을 `Authentication(인증)` , 권한획득을 `Authorization(권한부여)` 라고 명명합니다.
 - 여기서 주어지는 권한을 집합으로 구분하면 다음과 같습니다.
-- `Privilege(특권)`
-- `Authority(권위)`
-- `Role(역할)`
+- `Role(역할)` : 여러 동작묶음으로 구분되는 권한
+- `Authority(권위)` : 일련 동작에 대한 권한
+- `Privilege(특권)` : 일련 동작의 세부항목에 대한 권한
+
+```java
+public interface DefaultUserDetailsService extends UserDetailsService { }
+```
+
+- 이는 `Authenticataion` 에 사용되는 `UserDetailsService` 인터페이스의 서비스를 재구현함으로 적용할 수 있다.
+
+```java
+public class DefaultUserDetailsServiceImpl implements DefaultUserDetailsService {
+    @Override
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException(email));
+        return new org.springframework.security.core.userdetails.User(
+            user.getEmail(),
+            user.getPassword(),
+            true, // enabled
+            true, // accountNonExpired
+            true, // credentialsNonExpired  
+            true, // accountNonLocked
+            user.getRoles() // authorities = Collection<GrantedAuthority>
+        );
+    }
+}
+```
+
+- 해당 인터페이스의 `public UserDetails loadUserByUsername(String email)` 함수를 오버라이딩한다.
+- 여기서 `UserDetails` 를 상속한 `org.springframework.security.core.userdetails.User` 클래스에 `Collection<GrantedAuthority>` 객체를 권한정보를 전달하여 사용하게 된다.
+
+```java
+    @Override
+    protected void configure(AuthenticationManagerBuilder managerBuilder) throws Exception {
+        managerBuilder.userDetailsService(userDetailsService);
+    }
+```
+
+- 마지막으로 해당 Spring Security 인증에서 해당 서비스구현체를 사용하도록 지정하므로 개발자목적에 맞게 적용할 수 있다.
+
+#### 3.2. Authenticataion 시 JWT 토큰발행
+
+```java
+public class DefaultAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
+
+    @Autowired
+    public DefaultAuthenticationFilter(AuthenticationManager authenticationManager) {
+        super(authenticationManager);
+    }
+    
+    @Override
+    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
+            throws AuthenticationException {
+            
+            LoginRequest loginRequest = null;
+            try {
+                loginRequest = new ObjectMapper()
+                    .readValue(request.getInputStream(), LoginRequest.class);
+            } catch (IOException e) {
+                e.printStackTrace();
+                throw new RuntimeException(e);
+            }
+            Authentication authentication = new UsernamePasswordAuthenticationToken(
+                loginRequest.getEmail(), 
+                loginRequest.getPassword());
+            return this.getAuthenticationManager().authenticate(authentication);
+    }
+
+    @Override
+    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
+            Authentication authentication) throws IOException, ServletException, EntityNotFoundException {
+        // JWT Token Create
+        // response.addHeader("Authorization", JWT Token);
+    }
+}
+```
+
+- 로그인 커스터마이징은 기존 `UsernamePasswordAuthenticationFilter` 필터를 상속받아 재구현한다.
+- 먼저 `attemptAuthentication` 를 통해 로그인받을 입력형태를 지정한다. 여기서 `LoginRequest` 요청정보는 이메일과 비밀번호를 받는 기본 DTO 이다.
+    - 해당 요청를 인증객체인 `Authentication` 객체에 담아 `AuthenticationManager` 를 통해 `authenticate` 메쏘드로 인증하도록 전달하면 앞서 정의한 `loadUserByUsername`를 통해 인증정보를 받는다.
+    - 여기서 반환되는 값은 서비스에서 지정한 `Collection<GrantedAuthority>` 형태의 값을 반환하게 된다.
+- `successfulAuthentication` 에서는 해당 사용할 JWT 을 생성한 후 Response 의 헤더 또는 바디로 반환하여 클라이언트에게 토큰을 전달하게 된다.
+
+```java
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.authorizeRequests()
+                .antMatchers("/", "/css/**", "/images/**","/js/**", "/h2-console/**", "/login**", "/error**").permitAll()
+                .antMatchers(HttpMethod.POST, "/users").permitAll()
+                .antMatchers(HttpMethod.GET, "/users").hasRole("USER")
+                .anyRequest().authenticated();
+                
+        http.addFilter(defaultAuthenticationFilter());
+    }
+
+    @Bean
+    public DefaultAuthenticationFilter defaultAuthenticationFilter() throws Exception {
+        return new DefaultAuthenticationFilter(this.authenticationManager());
+    }
+```
+
+- 재정의된 `UsernamePasswordAuthenticationFilter` 는 `@Bean` 으로 등록한 후 `HttpSecurity` 에 전달하여 기존 필터를 대체시켜 적용한다.
+
+#### 3.2. Authenticataion 시 JWT 토큰생성
 
