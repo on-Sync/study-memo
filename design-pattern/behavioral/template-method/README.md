@@ -45,7 +45,7 @@ public abstract class WebSecurityConfigurerAdapter implements WebSecurityConfigu
 - 자바를 이용할 경우 template 성격에 맞도록 `abstract class` 기반 클래스에 정의하여 상속클래스를 요구하게 제한한다.
 - 또한 메소드의 불변성을 위해서 `final` 을 사용하여 `@Override` 를 막는다.
 - 해당 메소드는 템플릿 기능으로 제한할 내용을 구현해둔다.
-- 보통 `chaining` , `init` 등의 내용을 구현된다.
+- 보통 `chaining` , `init` 등의 내용이 구현된다.
 - 해당 메소드에서 사용할 기능을 구현체에서 재정의해야할 경우, 사용자는 좀더 유연한 템플릿을 사용한다.
 
 ---
