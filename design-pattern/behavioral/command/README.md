@@ -1,8 +1,6 @@
 # Command Pattern
 
-<p align="center">
-    <img src="https://github.com/on-Sync/design-pattern/blob/main/behavioral/command/command-classdiagram-eng.png" alt="Sublime's custom image"/>
-</p>
+![classdiagram](command-classdiagram-eng.png)
 
 ## 커맨드 패턴이란 ?
 
