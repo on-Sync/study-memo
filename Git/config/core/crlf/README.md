@@ -37,7 +37,7 @@ git config --global core.eol lf
 ```
 
 |설정|동작|
-|-|-|-|-|
+|-|-|
 |native|사용자 시스템의 `eol` 방식을 사용|
 |crlf|`crlf` 방식을 사용|
 |lf|`lf` 방식을 사용|
@@ -57,7 +57,7 @@ git config --global core.safecrlf false
 ```
 
 |설정|동작|
-|-|-|-|-|
+|-|-|
 |true|중단|
 |warn|경고 후 진행|
 |false|X|
